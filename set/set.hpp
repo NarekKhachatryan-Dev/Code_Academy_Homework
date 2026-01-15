@@ -2,6 +2,7 @@
 
 #include <initializer_list>
 #include <functional>
+#include <vector>
 
 template<typename T, typename Compare = std::less<T>>
 class Set {
@@ -21,6 +22,7 @@ class Set {
     Node* root;
     Compare comp;
     size_t tree_size;
+    
     public:
     Set() : root(nullptr), comp(Compare()), tree_size(0) {}
     Set(std::initializer_list<T> init) : Set() {
@@ -53,6 +55,7 @@ class Set {
         return containsRec(root, value);
     }
 
+    private:
     bool containsRec(Node* node, const T& value) const {
         if (!node) {
             return false;
@@ -66,6 +69,51 @@ class Set {
         }
     }
 
+    public:
+    std::vector<T> inorder() const {
+        std::vector<T> result;
+        inorderRec(root, result);
+        return result;
+    }
+
+    std::vector<T> preorder() const {
+        std::vector<T> result;
+        preorderRec(root, result);
+        return result;
+    }
+
+    std::vector<T> postorder() const {
+        std::vector<T> result;
+        postorderRec(root, result);
+        return result;
+    }
+
+    private:
+    void inorderRec(Node* node, std::vector<T>& result) const {
+        if (node) {
+            inorderRec(node->left, result);
+            result.push_back(node->data);
+            inorderRec(node->right, result);
+        }
+    }
+
+    void preorderRec(Node* node, std::vector<T>& result) const {
+        if (node) {
+            result.push_back(node->data);
+            preorderRec(node->left, result);
+            preorderRec(node->right, result);
+        }
+    }
+
+    void postorderRec(Node* node, std::vector<T>& result) const {
+        if (node) {
+            postorderRec(node->left, result);
+            postorderRec(node->right, result);
+            result.push_back(node->data);
+        }
+    }
+
+    public:
     Node* getRoot() const {
         return root;
     }
