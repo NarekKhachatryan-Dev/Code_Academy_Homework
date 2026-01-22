@@ -16,6 +16,41 @@ private:
     node* head;
 
 public:
+    class iterator {
+    public:
+        iterator(node* ptr) : current(ptr) {}
+        
+        T& operator*() const {
+            return current->data;
+        }
+        
+        iterator& operator++() {
+            current = current->next;
+            return *this;
+        }
+        
+        bool operator!=(const iterator& other) const {
+            return current != other.current;
+        }
+        
+        T& operator->() const {
+            return &(current->data);
+        }
+
+        bool operator==(const iterator& other) const {
+            return current == other.current;
+        }
+
+        T& operator++(int) {
+            T& temp = current->data;
+            current = current->next;
+            return temp;
+        }
+
+    private:
+        node* current;
+    };
+
     list() : head(nullptr) {}
     ~list() {
         clear();
