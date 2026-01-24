@@ -72,6 +72,32 @@ public:
         return m_capacity;
     }
 
+    void reserve(size_t new_capacity) {
+        if(new_capacity > m_capacity) {
+            T* new_data = new T[new_capacity];
+            for(size_t i = 0; i < m_size; ++i) {
+                new_data[i] = m_data[i];
+            }
+            delete[] m_data;
+            m_data = new_data;
+            m_capacity = new_capacity;
+        }
+    }
+
+    void resize(size_t new_size) {
+        if(new_size == m_size) {
+            return;
+        }
+        if(new_size > m_capacity) {
+            reserve(new_size);
+        } else if(new_size < m_size) {
+            for(size_t i = new_size; i < m_size; ++i) {
+                m_data[i].~T();
+            }
+        }
+        m_size = new_size;
+    }
+
     void push_back(const T& value) {
         if(m_size == m_capacity) {
             size_t new_capacity = (m_capacity == 0) ? 1 : m_capacity * 2;
