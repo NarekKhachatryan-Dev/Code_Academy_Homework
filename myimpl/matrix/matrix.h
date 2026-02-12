@@ -2,10 +2,11 @@
 #define MATRIX_H
 
 #include <iostream>
+#include <memory>
 
 class Matrix {
 private:
-    int** m_data;
+    std::unique_ptr<int[]> m_data;
     int m_size;
 
 public:
@@ -27,6 +28,8 @@ public:
     void transpose();
     void savetofile(const std::string& filename) const;
     void initfromfile(const std::string& filename);
+    int& at(int row, int col);
+    const int& at(int row, int col) const;
 
     friend std::ostream& operator<< (std::ostream& os, const Matrix& obj);
 };
