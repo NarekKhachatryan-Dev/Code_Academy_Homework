@@ -1,5 +1,5 @@
-#ifndef CHESSBOARD_H
-#define CHESSBOARD_H
+#ifndef CHESS_H
+#define CHESS_H
 
 #include <memory>
 #include <vector>
