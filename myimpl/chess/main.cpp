@@ -1,10 +1,7 @@
-#include <iostream>
-#include "chess.h"
+#include "game.h"
 
 int main() {
-    chessboard board;
-    board.initChessboard();
-    board.printChessboard();
-
+    Game chessGame;
+    chessGame.start();
     return 0;
 }

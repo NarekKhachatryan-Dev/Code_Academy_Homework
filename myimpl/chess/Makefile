@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/narekkhachatryan/Desktop/code_academy/homework/chess
+CMAKE_SOURCE_DIR = /home/narekkhachatryan/Desktop/code_academy/myimpl/chess
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/narekkhachatryan/Desktop/code_academy/homework/chess
+CMAKE_BINARY_DIR = /home/narekkhachatryan/Desktop/code_academy/myimpl/chess
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,9 +87,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/narekkhachatryan/Desktop/code_academy/homework/chess/CMakeFiles /home/narekkhachatryan/Desktop/code_academy/homework/chess//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/narekkhachatryan/Desktop/code_academy/myimpl/chess/CMakeFiles /home/narekkhachatryan/Desktop/code_academy/myimpl/chess//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/narekkhachatryan/Desktop/code_academy/homework/chess/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/narekkhachatryan/Desktop/code_academy/myimpl/chess/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -153,6 +153,30 @@ chess.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/a.out.dir/build.make CMakeFiles/a.out.dir/chess.cpp.s
 .PHONY : chess.cpp.s
 
+game.o: game.cpp.o
+.PHONY : game.o
+
+# target to build an object file
+game.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/a.out.dir/build.make CMakeFiles/a.out.dir/game.cpp.o
+.PHONY : game.cpp.o
+
+game.i: game.cpp.i
+.PHONY : game.i
+
+# target to preprocess a source file
+game.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/a.out.dir/build.make CMakeFiles/a.out.dir/game.cpp.i
+.PHONY : game.cpp.i
+
+game.s: game.cpp.s
+.PHONY : game.s
+
+# target to generate assembly for a file
+game.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/a.out.dir/build.make CMakeFiles/a.out.dir/game.cpp.s
+.PHONY : game.cpp.s
+
 main.o: main.cpp.o
 .PHONY : main.o
 
@@ -213,6 +237,9 @@ help:
 	@echo "... chess.o"
 	@echo "... chess.i"
 	@echo "... chess.s"
+	@echo "... game.o"
+	@echo "... game.i"
+	@echo "... game.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

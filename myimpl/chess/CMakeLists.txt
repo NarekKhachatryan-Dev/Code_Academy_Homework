@@ -7,4 +7,5 @@ add_executable(a.out
     main.cpp
     chess.cpp
     piece.cpp
+    game.cpp
 )
