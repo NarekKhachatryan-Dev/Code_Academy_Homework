@@ -1,15 +1,15 @@
 #include <iostream>
-#include <fstream>
+#include <cstdio>
 
 int main() {
-    std::ofstream file("abc.txt", std::ios::out);
+    FILE *file = fopen("abc.txt", "w");
     if (!file) {
         std::cerr << "Error opening file for writing!" << std::endl;
         return 1;
     }
 
-    file << "Hello, World!";
-    file.close();
+    fprintf(file, "Hello, World!");
+    fclose(file);
 
     return 0;
 }
