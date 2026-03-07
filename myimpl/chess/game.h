@@ -9,17 +9,15 @@
 class Game {
 private:
     chessboard board;
-    bool whiteTurn;
-    bool isRunning;
+    sf::Font font;             // font used for coordinate labels and evaluation text
 
     std::map<char, sf::Texture> textureMap;
     void loadAllTextures();
-    bool parseInput(const std::string& input, int& row, int& col);
+    std::string evaluatePosition(int depth = 8);
+    std::string movesToString(const std::vector<Move>& seq, bool startWhite) const;
 
 public:
     Game();
-    void start();
-    void handleInput();
     void runGUI();
     void drawBoard(sf::RenderWindow& window);
 };

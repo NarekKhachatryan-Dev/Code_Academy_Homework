@@ -52,6 +52,14 @@ struct position {
     int col;
 };
 
+
+struct Move {
+    int fromRow, fromCol;
+    int toRow, toCol;
+    char promotion = 'q';
+    bool capture = false;
+};
+
 class chessboard : public Matrix<PiecePtr> {
 public:
     static constexpr int BOARD_SIZE = 8;
@@ -65,15 +73,39 @@ public:
     chessboard& operator=(chessboard&& other) noexcept = default;
 
     void initChessboard();
+    void clear();
     void printChessboard() const;
-    bool isCheckmate(bool whiteTurn);
-    bool isStalemate(bool whiteTurn);
+
+    bool isCheckmate(bool whiteTurn) const;
+    bool isStalemate(bool whiteTurn) const;
     bool isCheck(bool whiteTurn) const;
+
     char getPieceSymbol(int row, int col) const;
     bool isempty(int row, int col) const;
-    
+    void placePiece(char symbol, int row, int col);
+
     bool makeMove(int fromRow, int fromCol, int toRow, int toCol, char promotionPiece = 'q');
-    
+
+    struct MoveRecord {
+        int fromR, fromC, toR, toC;
+        PiecePtr captured;
+        bool moved;
+        bool castling = false;
+        int rookFromC, rookToC;
+        bool rookMoved;
+        bool promotion = false;
+        char originalType;
+        position prevWhiteKing;
+        position prevBlackKing;
+    };
+
+    bool makeMoveUndo(int fromRow, int fromCol, int toRow, int toCol, char promotionPiece, MoveRecord& rec);
+    void undoMove(const MoveRecord& rec);
+
+    std::vector<Move> generateLegalMoves(bool whiteTurn, bool sortCaptures=false) const;
+
+    int findMate(int maxDepth, bool whiteToMove, std::vector<Move>& sequence) const;
+
     position getWhiteKingPos() const;
     position getBlackKingPos() const;
 

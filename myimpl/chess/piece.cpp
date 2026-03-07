@@ -125,7 +125,6 @@ bool king::isvalidmove(int newRow, int newCol, const Matrix<PiecePtr>& board) co
 
     if (rowDiff <= 1 && colDiff <= 1) return true;
 
-    // Castling
     if (!m_hasMoved && rowDiff == 0 && colDiff == 2) {
         const chessboard& cb = static_cast<const chessboard&>(board);
         if (cb.isCheck(m_isWhite)) return false;
