@@ -3,10 +3,16 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 #include "matrix.h"
 
 class piece;
 using PiecePtr = std::unique_ptr<piece>;
+
+struct position {
+    int row;
+    int col;
+};
 
 class piece {
 public:
@@ -21,14 +27,14 @@ public:
     virtual ~piece() = default;
 
     virtual PiecePtr clone() const = 0;
-    virtual bool isvalidmove(int newRow, int newCol, const Matrix<PiecePtr>& board) const;
+    virtual bool isvalidmove(int newRow, int newCol, const Matrix<PiecePtr>& board) const = 0;
+    
     void setRow(int row) { m_row = row; }
     void setCol(int col) { m_col = col; }
     bool hasMoved() const { return m_hasMoved; }
     void setMoved(bool moved) { m_hasMoved = moved; }
-
-    char getSymbol() const;
-    bool isWhite() const;
+    char getSymbol() const { return m_type; }
+    bool isWhite() const { return m_isWhite; }
 };
 
 #define CHESS_PIECE_CLASS(ClassName) \
@@ -47,12 +53,6 @@ CHESS_PIECE_CLASS(rook)
 CHESS_PIECE_CLASS(queen)
 CHESS_PIECE_CLASS(king)
 
-struct position {
-    int row;
-    int col;
-};
-
-
 struct Move {
     int fromRow, fromCol;
     int toRow, toCol;
@@ -65,26 +65,6 @@ public:
     static constexpr int BOARD_SIZE = 8;
     position whiteKingPos;
     position blackKingPos;
-
-    chessboard();
-    chessboard(const chessboard& other);
-    chessboard& operator=(const chessboard& other);
-    chessboard(chessboard&& other) noexcept = default;
-    chessboard& operator=(chessboard&& other) noexcept = default;
-
-    void initChessboard();
-    void clear();
-    void printChessboard() const;
-
-    bool isCheckmate(bool whiteTurn) const;
-    bool isStalemate(bool whiteTurn) const;
-    bool isCheck(bool whiteTurn) const;
-
-    char getPieceSymbol(int row, int col) const;
-    bool isempty(int row, int col) const;
-    void placePiece(char symbol, int row, int col);
-
-    bool makeMove(int fromRow, int fromCol, int toRow, int toCol, char promotionPiece = 'q');
 
     struct MoveRecord {
         int fromR, fromC, toR, toC;
@@ -99,17 +79,34 @@ public:
         position prevBlackKing;
     };
 
+    chessboard();
+    chessboard(const chessboard& other);
+    chessboard& operator=(const chessboard& other);
+    virtual ~chessboard();
+
+    void initChessboard();
+    void clear();
+    void printChessboard() const;
+
+    bool isCheckmate(bool whiteTurn) const;
+    bool isStalemate(bool whiteTurn) const;
+    bool isCheck(bool whiteTurn) const;
+
+    char getPieceSymbol(int row, int col) const;
+    bool isempty(int row, int col) const;
+    void placePiece(char symbol, int row, int col);
+
+    bool makeMove(int fromRow, int fromCol, int toRow, int toCol, char promotionPiece = 'q');
     bool makeMoveUndo(int fromRow, int fromCol, int toRow, int toCol, char promotionPiece, MoveRecord& rec);
     void undoMove(const MoveRecord& rec);
+    int findMate(int maxDepth, bool whiteToMove, std::vector<Move>& sequence);
+    
+    std::vector<Move> generateLegalMoves(bool whiteTurn, bool sortCaptures = false);
+    int evaluate() const;
+    int analyze(int depth, int alpha, int beta, bool maximizingPlayer);
 
-    std::vector<Move> generateLegalMoves(bool whiteTurn, bool sortCaptures=false) const;
-
-    int findMate(int maxDepth, bool whiteToMove, std::vector<Move>& sequence) const;
-
-    position getWhiteKingPos() const;
-    position getBlackKingPos() const;
-
-    virtual ~chessboard();
+    position getWhiteKingPos() const { return whiteKingPos; }
+    position getBlackKingPos() const { return blackKingPos; }
 };
 
 #endif
