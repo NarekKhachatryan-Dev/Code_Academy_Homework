@@ -144,14 +144,30 @@ void chessboard::undoMove(const MoveRecord& rec) {
 }
 
 void chessboard::placePiece(char symbol, int row, int col) {
-    if (symbol == '.') {
-        
-        const auto& currentPiece = getElement(row, col);
-        if (currentPiece && std::tolower(currentPiece->getSymbol()) == 'k') {
-            if (currentPiece->isWhite()) whiteKingPos = {-1, -1};
-            else blackKingPos = {-1, -1};
+    auto refreshKingPositions = [this]() {
+        position newWhite{-1, -1};
+        position newBlack{-1, -1};
+
+        for (int r = 0; r < BOARD_SIZE; ++r) {
+            for (int c = 0; c < BOARD_SIZE; ++c) {
+                const auto& p = getElement(r, c);
+                if (!p || std::tolower(p->getSymbol()) != 'k') continue;
+
+                if (p->isWhite()) {
+                    if (newWhite.row == -1) newWhite = {r, c};
+                } else {
+                    if (newBlack.row == -1) newBlack = {r, c};
+                }
+            }
         }
+
+        whiteKingPos = newWhite;
+        blackKingPos = newBlack;
+    };
+
+    if (symbol == '.') {
         setElement(row, col, nullptr);
+        refreshKingPositions();
         return;
     }
 
@@ -163,56 +179,83 @@ void chessboard::placePiece(char symbol, int row, int col) {
     else if (type == 'n') setElement(row, col, std::make_unique<knight>(row, col, isWhite));
     else if (type == 'b') setElement(row, col, std::make_unique<bishop>(row, col, isWhite));
     else if (type == 'q') setElement(row, col, std::make_unique<queen>(row, col, isWhite));
-    else if (type == 'k') {
-        setElement(row, col, std::make_unique<king>(row, col, isWhite));
-        
-        if (isWhite) whiteKingPos = {row, col};
-        else blackKingPos = {row, col};
-    }
+    else if (type == 'k') setElement(row, col, std::make_unique<king>(row, col, isWhite));
+
+    refreshKingPositions();
 }
 
 int chessboard::findMate(int maxDepth, bool whiteToMove, std::vector<Move>& sequence) {
     if (maxDepth <= 0) return -1;
 
-    std::vector<Move> moves = generateLegalMoves(whiteToMove, true);
-    int bestMateDepth = 1000; 
-    std::vector<Move> bestSequence;
+    const bool attackerIsWhite = whiteToMove;
+    constexpr int INF = 1000000;
 
-    for (const auto& m : moves) {
-        MoveRecord rec;
-        if (makeMoveUndo(m.fromRow, m.fromCol, m.toRow, m.toCol, m.promotion, rec)) {
-            
-            
-            if (isCheckmate(!whiteToMove)) {
+    std::function<int(int, bool, std::vector<Move>&)> dfs = [&](int depth, bool sideToMove, std::vector<Move>& line) -> int {
+        if (isCheckmate(sideToMove)) {
+            line.clear();
+            return (sideToMove != attackerIsWhite) ? 0 : -1;
+        }
+
+        if (depth == 0) return -1;
+
+        std::vector<Move> moves = generateLegalMoves(sideToMove, true);
+        if (moves.empty()) return -1;
+
+        if (sideToMove == attackerIsWhite) {
+            int best = INF;
+            std::vector<Move> bestLine;
+
+            for (const auto& m : moves) {
+                MoveRecord rec;
+                if (!makeMoveUndo(m.fromRow, m.fromCol, m.toRow, m.toCol, m.promotion, rec)) continue;
+
+                std::vector<Move> childLine;
+                int res = dfs(depth - 1, !sideToMove, childLine);
                 undoMove(rec);
-                sequence = { m };
-                return 1; 
-            }
 
-            
-            if (maxDepth > 1) {
-                std::vector<Move> childSeq;
-                int res = findMate(maxDepth - 1, !whiteToMove, childSeq);
-                
-                if (res != -1) {
-                    int currentMateDepth = res + 1;
-                    if (currentMateDepth < bestMateDepth) {
-                        bestMateDepth = currentMateDepth;
-                        bestSequence = { m };
-                        bestSequence.insert(bestSequence.end(), childSeq.begin(), childSeq.end());
-                    }
+                if (res == -1) continue;
+                int mateDepth = res + 1;
+                if (mateDepth < best) {
+                    best = mateDepth;
+                    bestLine.clear();
+                    bestLine.push_back(m);
+                    bestLine.insert(bestLine.end(), childLine.begin(), childLine.end());
                 }
             }
-            undoMove(rec);
+
+            if (best == INF) return -1;
+            line = bestLine;
+            return best;
         }
-    }
 
-    if (bestMateDepth != 1000) {
-        sequence = bestSequence;
-        return bestMateDepth;
-    }
+        int worst = -1;
+        std::vector<Move> worstLine;
 
-    return -1;
+        for (const auto& m : moves) {
+            MoveRecord rec;
+            if (!makeMoveUndo(m.fromRow, m.fromCol, m.toRow, m.toCol, m.promotion, rec)) continue;
+
+            std::vector<Move> childLine;
+            int res = dfs(depth - 1, !sideToMove, childLine);
+            undoMove(rec);
+
+            if (res == -1) return -1;
+
+            int mateDepth = res + 1;
+            if (mateDepth > worst) {
+                worst = mateDepth;
+                worstLine.clear();
+                worstLine.push_back(m);
+                worstLine.insert(worstLine.end(), childLine.begin(), childLine.end());
+            }
+        }
+
+        if (worst == -1) return -1;
+        line = worstLine;
+        return worst;
+    };
+
+    return dfs(maxDepth, whiteToMove, sequence);
 }
 
 std::vector<Move> chessboard::generateLegalMoves(bool whiteTurn, bool sortCaptures) {
