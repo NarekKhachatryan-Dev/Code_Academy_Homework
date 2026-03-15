@@ -11,6 +11,7 @@ class Game {
 private:
     chessboard board;
     sf::Font font;
+    bool fontLoaded = false;
     bool whiteToMove = true;
 
     
@@ -18,6 +19,7 @@ private:
 
     
     void loadAllTextures();
+    bool loadFont();
     void drawBoard(sf::RenderWindow& window);
     void highlightSquare(sf::RenderWindow& window, position pos, sf::Color color);
 

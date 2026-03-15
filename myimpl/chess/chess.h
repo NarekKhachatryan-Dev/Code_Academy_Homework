@@ -37,21 +37,53 @@ public:
     bool isWhite() const { return m_isWhite; }
 };
 
-#define CHESS_PIECE_CLASS(ClassName) \
-class ClassName : public piece { \
-public: \
-    ClassName(int row, int col, bool isWhite); \
-    PiecePtr clone() const override { return std::make_unique<ClassName>(*this); } \
-    bool isvalidmove(int newRow, int newCol, const Matrix<PiecePtr>& board) const override; \
-    ~ClassName() override = default; \
+class pawn : public piece {
+public:
+    pawn(int row, int col, bool isWhite);
+    PiecePtr clone() const override { return std::make_unique<pawn>(*this); }
+    bool isvalidmove(int newRow, int newCol, const Matrix<PiecePtr>& board) const override;
+    ~pawn() override = default;
 };
 
-CHESS_PIECE_CLASS(pawn)
-CHESS_PIECE_CLASS(bishop)
-CHESS_PIECE_CLASS(knight)
-CHESS_PIECE_CLASS(rook)
-CHESS_PIECE_CLASS(queen)
-CHESS_PIECE_CLASS(king)
+class bishop : public piece {
+public:
+    bishop(int row, int col, bool isWhite);
+    PiecePtr clone() const override { return std::make_unique<bishop>(*this); }
+    bool isvalidmove(int newRow, int newCol, const Matrix<PiecePtr>& board) const override;
+    ~bishop() override = default;
+};
+
+class knight : public piece {
+public:
+    knight(int row, int col, bool isWhite);
+    PiecePtr clone() const override { return std::make_unique<knight>(*this); }
+    bool isvalidmove(int newRow, int newCol, const Matrix<PiecePtr>& board) const override;
+    ~knight() override = default;
+};
+
+class rook : public piece {
+public:
+    rook(int row, int col, bool isWhite);
+    PiecePtr clone() const override { return std::make_unique<rook>(*this); }
+    bool isvalidmove(int newRow, int newCol, const Matrix<PiecePtr>& board) const override;
+    ~rook() override = default;
+};
+
+class queen : public piece {
+public:
+    queen(int row, int col, bool isWhite);
+    PiecePtr clone() const override { return std::make_unique<queen>(*this); }
+    bool isvalidmove(int newRow, int newCol, const Matrix<PiecePtr>& board) const override;
+    ~queen() override = default;
+};
+
+class king : public piece {
+public:
+    king(int row, int col, bool isWhite);
+    PiecePtr clone() const override { return std::make_unique<king>(*this); }
+    bool isvalidmove(int newRow, int newCol, const Matrix<PiecePtr>& board) const override;
+    ~king() override = default;
+};
 
 struct Move {
     int fromRow, fromCol;
@@ -98,7 +130,7 @@ public:
 
     bool makeMove(int fromRow, int fromCol, int toRow, int toCol, char promotionPiece = 'q');
     bool makeMoveUndo(int fromRow, int fromCol, int toRow, int toCol, char promotionPiece, MoveRecord& rec);
-    void undoMove(const MoveRecord& rec);
+    void undoMove(MoveRecord& rec);
     int findMate(int maxDepth, bool whiteToMove, std::vector<Move>& sequence);
     
     std::vector<Move> generateLegalMoves(bool whiteTurn, bool sortCaptures = false);
@@ -107,6 +139,10 @@ public:
 
     position getWhiteKingPos() const { return whiteKingPos; }
     position getBlackKingPos() const { return blackKingPos; }
+
+private:
+    static PiecePtr createPieceBySymbol(char symbol, int row, int col);
+    void refreshKingPositions();
 };
 
 #endif

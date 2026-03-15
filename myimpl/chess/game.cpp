@@ -23,6 +23,12 @@ void Game::loadAllTextures() {
     }
 }
 
+bool Game::loadFont() {
+    return font.loadFromFile("arial.ttf") ||
+           font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") ||
+           font.loadFromFile("/usr/share/fonts/truetype/freefont/FreeSans.ttf");
+}
+
 void Game::runGUI() {
     sf::RenderWindow window(sf::VideoMode(800, 950), "Position Analyzer Pro");
     loadAllTextures();
@@ -30,22 +36,17 @@ void Game::runGUI() {
     
     whiteToMove = true; 
 
-    bool fontOK = false;
-    if (font.loadFromFile("arial.ttf") || 
-        font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") ||
-        font.loadFromFile("/usr/share/fonts/truetype/freefont/FreeSans.ttf")) {
-        fontOK = true;
-    }
+    fontLoaded = loadFont();
 
     sf::Text evalText;
-    if (fontOK) evalText.setFont(font);
+    if (fontLoaded) evalText.setFont(font);
     evalText.setCharacterSize(16);
     evalText.setFillColor(sf::Color::Cyan);
     evalText.setPosition(10.f, 820.f);
 
     
     sf::Text turnText;
-    if (fontOK) turnText.setFont(font);
+    if (fontLoaded) turnText.setFont(font);
     turnText.setCharacterSize(18);
     turnText.setPosition(10.f, 895.f);
 
@@ -112,7 +113,7 @@ void Game::runGUI() {
 
         
         window.draw(clearBtn);
-        if (fontOK) {
+        if (fontLoaded) {
             sf::Text btnText("Clear Board", font, 16);
             btnText.setPosition(670.f, 900.f);
             window.draw(btnText);
@@ -155,6 +156,8 @@ void Game::drawBoard(sf::RenderWindow& window) {
             }
         }
     }
+
+    if (!fontLoaded) return;
 
     for (int i = 0; i < 8; i++) {
         sf::Text label;

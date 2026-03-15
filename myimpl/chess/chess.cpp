@@ -1,9 +1,24 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <cctype>
 #include <functional>
 #include <vector>
 #include "chess.h"
+
+namespace {
+int pieceValue(char symbol) {
+    switch (std::tolower(symbol)) {
+        case 'p': return 100;
+        case 'n': return 320;
+        case 'b': return 330;
+        case 'r': return 500;
+        case 'q': return 900;
+        case 'k': return 20000;
+        default: return 0;
+    }
+}
+}
 
 chessboard::chessboard() : Matrix<PiecePtr>(BOARD_SIZE) {
     initChessboard();
@@ -37,6 +52,39 @@ chessboard& chessboard::operator=(const chessboard& other) {
 }
 
 chessboard::~chessboard() {}
+
+PiecePtr chessboard::createPieceBySymbol(char symbol, int row, int col) {
+    bool isWhite = std::isupper(symbol);
+    switch (std::tolower(symbol)) {
+        case 'p': return std::make_unique<pawn>(row, col, isWhite);
+        case 'r': return std::make_unique<rook>(row, col, isWhite);
+        case 'n': return std::make_unique<knight>(row, col, isWhite);
+        case 'b': return std::make_unique<bishop>(row, col, isWhite);
+        case 'q': return std::make_unique<queen>(row, col, isWhite);
+        case 'k': return std::make_unique<king>(row, col, isWhite);
+        default: return nullptr;
+    }
+}
+
+void chessboard::refreshKingPositions() {
+    position newWhite{-1, -1};
+    position newBlack{-1, -1};
+
+    for (int r = 0; r < BOARD_SIZE; ++r) {
+        for (int c = 0; c < BOARD_SIZE; ++c) {
+            const auto& p = getElement(r, c);
+            if (!p || std::tolower(p->getSymbol()) != 'k') continue;
+            if (p->isWhite()) {
+                if (newWhite.row == -1) newWhite = {r, c};
+            } else {
+                if (newBlack.row == -1) newBlack = {r, c};
+            }
+        }
+    }
+
+    whiteKingPos = newWhite;
+    blackKingPos = newBlack;
+}
 
 bool chessboard::makeMove(int fromRow, int fromCol, int toRow, int toCol, char promotionPiece) {
     MoveRecord rec;
@@ -106,17 +154,17 @@ bool chessboard::makeMoveUndo(int fromRow, int fromCol, int toRow, int toCol, ch
     if (symbol == 'p' && (toRow == 0 || toRow == 7)) {
         rec.promotion = true;
         char choice = std::tolower(promotionPiece);
-        if (choice == 'r') setElement(toRow, toCol, std::make_unique<rook>(toRow, toCol, isWhite));
-        else if (choice == 'n') setElement(toRow, toCol, std::make_unique<knight>(toRow, toCol, isWhite));
-        else if (choice == 'b') setElement(toRow, toCol, std::make_unique<bishop>(toRow, toCol, isWhite));
-        else setElement(toRow, toCol, std::make_unique<queen>(toRow, toCol, isWhite));
+        if (choice == 'r') setElement(toRow, toCol, createPieceBySymbol(isWhite ? 'R' : 'r', toRow, toCol));
+        else if (choice == 'n') setElement(toRow, toCol, createPieceBySymbol(isWhite ? 'N' : 'n', toRow, toCol));
+        else if (choice == 'b') setElement(toRow, toCol, createPieceBySymbol(isWhite ? 'B' : 'b', toRow, toCol));
+        else setElement(toRow, toCol, createPieceBySymbol(isWhite ? 'Q' : 'q', toRow, toCol));
         getElement(toRow, toCol)->setMoved(true);
     }
 
     return true;
 }
 
-void chessboard::undoMove(const MoveRecord& rec) {
+void chessboard::undoMove(MoveRecord& rec) {
     whiteKingPos = rec.prevWhiteKing;
     blackKingPos = rec.prevBlackKing;
 
@@ -130,7 +178,7 @@ void chessboard::undoMove(const MoveRecord& rec) {
 
     if (rec.promotion) {
         bool w = std::isupper(rec.originalType);
-        setElement(rec.fromR, rec.fromC, std::make_unique<pawn>(rec.fromR, rec.fromC, w));
+        setElement(rec.fromR, rec.fromC, createPieceBySymbol(w ? 'P' : 'p', rec.fromR, rec.fromC));
         getElement(rec.fromR, rec.fromC)->setMoved(rec.moved);
     } else {
         setElement(rec.fromR, rec.fromC, std::move(getElement(rec.toR, rec.toC)));
@@ -140,48 +188,21 @@ void chessboard::undoMove(const MoveRecord& rec) {
         p->setMoved(rec.moved);
     }
 
-    setElement(rec.toR, rec.toC, std::move(const_cast<PiecePtr&>(rec.captured)));
+    setElement(rec.toR, rec.toC, std::move(rec.captured));
 }
 
 void chessboard::placePiece(char symbol, int row, int col) {
-    auto refreshKingPositions = [this]() {
-        position newWhite{-1, -1};
-        position newBlack{-1, -1};
-
-        for (int r = 0; r < BOARD_SIZE; ++r) {
-            for (int c = 0; c < BOARD_SIZE; ++c) {
-                const auto& p = getElement(r, c);
-                if (!p || std::tolower(p->getSymbol()) != 'k') continue;
-
-                if (p->isWhite()) {
-                    if (newWhite.row == -1) newWhite = {r, c};
-                } else {
-                    if (newBlack.row == -1) newBlack = {r, c};
-                }
-            }
-        }
-
-        whiteKingPos = newWhite;
-        blackKingPos = newBlack;
-    };
-
     if (symbol == '.') {
         setElement(row, col, nullptr);
-        refreshKingPositions();
+        this->refreshKingPositions();
         return;
     }
 
-    bool isWhite = std::isupper(symbol);
-    char type = std::tolower(symbol);
+    PiecePtr created = createPieceBySymbol(symbol, row, col);
+    if (!created) return;
+    setElement(row, col, std::move(created));
 
-    if (type == 'p') setElement(row, col, std::make_unique<pawn>(row, col, isWhite));
-    else if (type == 'r') setElement(row, col, std::make_unique<rook>(row, col, isWhite));
-    else if (type == 'n') setElement(row, col, std::make_unique<knight>(row, col, isWhite));
-    else if (type == 'b') setElement(row, col, std::make_unique<bishop>(row, col, isWhite));
-    else if (type == 'q') setElement(row, col, std::make_unique<queen>(row, col, isWhite));
-    else if (type == 'k') setElement(row, col, std::make_unique<king>(row, col, isWhite));
-
-    refreshKingPositions();
+    this->refreshKingPositions();
 }
 
 int chessboard::findMate(int maxDepth, bool whiteToMove, std::vector<Move>& sequence) {
@@ -293,14 +314,7 @@ int chessboard::evaluate() const {
         for (int j = 0; j < BOARD_SIZE; ++j) {
             const auto& p = getElement(i, j);
             if (p) {
-                int val = 0;
-                char s = std::tolower(p->getSymbol());
-                if (s == 'p') val = 100;
-                else if (s == 'n') val = 320;
-                else if (s == 'b') val = 330;
-                else if (s == 'r') val = 500;
-                else if (s == 'q') val = 900;
-                else if (s == 'k') val = 20000;
+                int val = pieceValue(p->getSymbol());
                 score += p->isWhite() ? val : -val;
             }
         }
@@ -348,27 +362,27 @@ int chessboard::analyze(int depth, int alpha, int beta, bool maximizingPlayer) {
 
 void chessboard::initChessboard() {
     clear();
-    setElement(0, 0, std::make_unique<rook>(0, 0, false));
-    setElement(0, 1, std::make_unique<knight>(0, 1, false));
-    setElement(0, 2, std::make_unique<bishop>(0, 2, false));
-    setElement(0, 3, std::make_unique<queen>(0, 3, false));
-    setElement(0, 4, std::make_unique<king>(0, 4, false));
+    setElement(0, 0, createPieceBySymbol('r', 0, 0));
+    setElement(0, 1, createPieceBySymbol('n', 0, 1));
+    setElement(0, 2, createPieceBySymbol('b', 0, 2));
+    setElement(0, 3, createPieceBySymbol('q', 0, 3));
+    setElement(0, 4, createPieceBySymbol('k', 0, 4));
     blackKingPos = {0, 4};
-    setElement(0, 5, std::make_unique<bishop>(0, 5, false));
-    setElement(0, 6, std::make_unique<knight>(0, 6, false));
-    setElement(0, 7, std::make_unique<rook>(0, 7, false));
-    for (int j = 0; j < BOARD_SIZE; ++j) setElement(1, j, std::make_unique<pawn>(1, j, false));
+    setElement(0, 5, createPieceBySymbol('b', 0, 5));
+    setElement(0, 6, createPieceBySymbol('n', 0, 6));
+    setElement(0, 7, createPieceBySymbol('r', 0, 7));
+    for (int j = 0; j < BOARD_SIZE; ++j) setElement(1, j, createPieceBySymbol('p', 1, j));
 
-    setElement(7, 0, std::make_unique<rook>(7, 0, true));
-    setElement(7, 1, std::make_unique<knight>(7, 1, true));
-    setElement(7, 2, std::make_unique<bishop>(7, 2, true));
-    setElement(7, 3, std::make_unique<queen>(7, 3, true));
-    setElement(7, 4, std::make_unique<king>(7, 4, true));
+    setElement(7, 0, createPieceBySymbol('R', 7, 0));
+    setElement(7, 1, createPieceBySymbol('N', 7, 1));
+    setElement(7, 2, createPieceBySymbol('B', 7, 2));
+    setElement(7, 3, createPieceBySymbol('Q', 7, 3));
+    setElement(7, 4, createPieceBySymbol('K', 7, 4));
     whiteKingPos = {7, 4};
-    setElement(7, 5, std::make_unique<bishop>(7, 5, true));
-    setElement(7, 6, std::make_unique<knight>(7, 6, true));
-    setElement(7, 7, std::make_unique<rook>(7, 7, true));
-    for (int j = 0; j < BOARD_SIZE; ++j) setElement(6, j, std::make_unique<pawn>(6, j, true));
+    setElement(7, 5, createPieceBySymbol('B', 7, 5));
+    setElement(7, 6, createPieceBySymbol('N', 7, 6));
+    setElement(7, 7, createPieceBySymbol('R', 7, 7));
+    for (int j = 0; j < BOARD_SIZE; ++j) setElement(6, j, createPieceBySymbol('P', 6, j));
 }
 
 bool chessboard::isCheck(bool whiteKing) const {
